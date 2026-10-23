@@ -7,3 +7,7 @@ for q in cases:
     print(f"Q: {q}\n  -> {m} ({s:.2f})")
 assert bot.respond("What's the weather on Mars?") == FALLBACK
 print("OK")
+# Security review F6: very long input is capped and still handled
+a, m, s = bot.match("Is this internship remote? " * 1000)
+print("Long input ->", m)
+print("OK (security)")

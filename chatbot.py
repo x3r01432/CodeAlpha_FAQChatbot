@@ -7,17 +7,40 @@ from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
+MAX_QUESTION_CHARS = 500  # security review F6
 FALLBACK = "Sorry, I don't know the answer to that. Try rephrasing your question."
 
 
+# punkt_tab is the tokenizer data used by current NLTK releases (legacy "punkt" is not needed).
+NLTK_PACKAGES = [("tokenizers/punkt_tab", "punkt_tab"),
+                 ("corpora/stopwords", "stopwords"), ("corpora/wordnet", "wordnet"),
+                 ("corpora/omw-1.4", "omw-1.4")]
+
+
 def ensure_nltk_data():
-    for path, pkg in [("tokenizers/punkt", "punkt"), ("tokenizers/punkt_tab", "punkt_tab"),
-                      ("corpora/stopwords", "stopwords"), ("corpora/wordnet", "wordnet"),
-                      ("corpora/omw-1.4", "omw-1.4")]:
+    """Check that the NLTK data this bot needs is installed (security review F4).
+
+    Only the specific packages listed above are ever downloaded, quietly, and
+    the result is verified. If data is still missing (e.g. no network), a clear
+    error explains how to install it manually.
+    """
+    missing = []
+    for path, pkg in NLTK_PACKAGES:
         try:
             nltk.data.find(path)
         except LookupError:
-            nltk.download(pkg, quiet=True)
+            missing.append((path, pkg))
+    still_missing = []
+    for path, pkg in missing:
+        try:
+            nltk.download(pkg, quiet=True, raise_on_error=True)
+            nltk.data.find(path)
+        except Exception:
+            still_missing.append(pkg)
+    if still_missing:
+        raise RuntimeError(
+            "Missing NLTK data: %s. Install it with: python -m nltk.downloader %s"
+            % (", ".join(still_missing), " ".join(still_missing)))
 
 
 class FAQChatbot:
@@ -37,6 +60,7 @@ class FAQChatbot:
 
     def match(self, question):
         """Return (answer, matched_question, score)."""
+        question = (question or "")[:MAX_QUESTION_CHARS]
         clean = self.preprocess(question)
         if not clean:
             return FALLBACK, None, 0.0

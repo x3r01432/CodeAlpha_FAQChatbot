@@ -39,3 +39,13 @@ CodeAlpha_FAQChatbot/
 
 ## License
 MIT
+
+## Security
+
+This app was reviewed in [CodeAlpha_SecureCodingReview](https://github.com/x3r01432/CodeAlpha_SecureCodingReview), and these fixes are applied:
+
+- Chat messages are shown as plain text, so typed Markdown or links aren't rendered.
+- Questions are limited to 500 characters, and the chat keeps only the last 50 messages.
+- At startup the app checks for the NLTK data it needs (punkt_tab, stopwords, wordnet, omw-1.4) and downloads only those, quietly. If they can't be installed it gives a clear message: `python -m nltk.downloader punkt_tab stopwords wordnet omw-1.4`.
+- If the bot can't start, users see a short generic message and the details go to the server log.
+- Dependencies are pinned to exact tested versions in `requirements.txt`.
